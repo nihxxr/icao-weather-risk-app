@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Risk Result</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-white">
+  <div class="container mt-5 text-center">
+    <h2>Predicted Risk Level</h2>
+    <div class="alert alert-{{ color }} mt-4" role="alert">
+      <strong>{{ risk }}</strong> Risk
+    </div>
+
+    <canvas id="riskChart" width="400" height="200" class="mb-4"></canvas>
+
+    <!-- Button Row -->
+    <div class="d-flex justify-content-center gap-3 mb-4">
+      <button onclick="downloadChart()" class="btn btn-outline-light">Download Chart</button>
+      <a href="/" class="btn btn-outline-info">Back</a>
+      <a href="/download?risk={{ risk }}" class="btn btn-success">Download Report</a>
+    </div>
+
+    <!-- Chart Script -->
+    <script>
+      const wind = {{ wind | tojson }};
+      const vis = {{ vis | tojson }};
+      const temp = {{ temp | tojson }};
+      const chartColor = {{ chart_color | tojson }};
+
+      const ctx = document.getElementById('riskChart').getContext('2d');
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Wind (kt)', 'Visibility (km)', 'Temperature (°C)'],
+          datasets: [{
+            label: 'Weather Inputs',
+            data: [wind, vis, temp],
+            borderColor: chartColor,
+            backgroundColor: chartColor.replace('1)', '0.3)'), // light fill
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#fff',
+            pointRadius: 6
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#ccc' },
+              grid: { color: '#555' }
+            },
+            x: {
+              ticks: { color: '#ccc' },
+              grid: { color: '#555' }
+            }
+          },
+          plugins: {
+            legend: { labels: { color: '#fff' } }
+          }
+        }
+      });
+
+      function downloadChart() {
+        const link = document.createElement('a');
+        link.href = chart.toBase64Image();
+        link.download = 'icao_weather_risk_chart.png';
+        link.click();
+      }
+    </script>
+  </div>
+</body>
+</html>
