@@ -1,15 +1,22 @@
 from flask import Flask, render_template, request, redirect, url_for, session, send_file
+from werkzeug.security import generate_password_hash, check_password_hash
 import joblib
 import os
 import json
 import requests
+import secrets
 
 app = Flask(__name__)
-app.secret_key = 'secret123'
+app.secret_key = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
 
 model = joblib.load('weather_risk_model.pkl')
 USER_FILE = "users.json"
-AVWX_TOKEN = "ptP35Q34G9ENj6czvlH-hP1YSSHWPqoD2xnwfZzMFKw"
+AVWX_TOKEN = os.environ.get("AVWX_TOKEN")
+if not AVWX_TOKEN:
+    raise RuntimeError(
+        "AVWX_TOKEN is not set. Create a token at https://avwx.rest and export it, "
+        "e.g. export AVWX_TOKEN=your_token_here"
+    )
 
 # ----------------- User Management -----------------
 def load_users():
@@ -108,7 +115,7 @@ def signup():
         users = load_users()
         if username in users:
             return render_template("signup.html", error="Username already exists.")
-        users[username] = password
+        users[username] = generate_password_hash(password)
         save_users(users)
         session["user"] = username
         return redirect(url_for("index"))
@@ -120,7 +127,7 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
         users = load_users()
-        if username in users and users[username] == password:
+        if username in users and check_password_hash(users[username], password):
             session["user"] = username
             return redirect(url_for("index"))
         return render_template("login.html", error="Invalid Credentials")
