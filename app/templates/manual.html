@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Enter values | Weather Risk{% endblock %}
+{% block content %}
+<section class="panel narrow">
+  <h1>Check your own values</h1>
+  <p class="muted">Test a forecast or a what-if. Wind, visibility and temperature are required; gusts and ceiling make the check more complete.</p>
+  {% if error %}<p class="field-error" role="alert">{{ error }}</p>{% endif %}
+  <form method="post" class="grid-form">
+    <label>Wind <span class="unit">kt</span>
+      <input type="number" name="wind" min="0" max="150" step="1" value="{{ values.wind or '' }}" required inputmode="numeric"></label>
+    <label>Gusts <span class="unit">kt, optional</span>
+      <input type="number" name="gust" min="0" max="200" step="1" value="{{ values.gust or '' }}" inputmode="numeric"></label>
+    <label>Visibility <span class="unit">km</span>
+      <input type="number" name="vis" min="0" max="10" step="0.1" value="{{ values.vis or '' }}" required inputmode="decimal"></label>
+    <label>Ceiling <span class="unit">ft, optional</span>
+      <input type="number" name="ceiling" min="0" max="20000" step="100" value="{{ values.ceiling or '' }}" inputmode="numeric"></label>
+    <label>Temperature <span class="unit">°C</span>
+      <input type="number" name="temp" min="-60" max="60" step="1" value="{{ values.temp or '' }}" required inputmode="numeric"></label>
+    <button class="btn" type="submit">Check risk</button>
+  </form>
+</section>
+{% endblock %}

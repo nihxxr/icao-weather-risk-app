@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ obs.station }} {{ a.label }} risk | Weather Risk{% endblock %}
+
+{% macro tape(kind, label, value_text, pct, level, ticks, note=None) %}
+<div class="readout lvl-{{ level }}" data-kind="{{ kind }}">
+  <div class="readout-head">
+    <h3>{{ label }}</h3>
+    <p class="readout-value">{{ value_text }}</p>
+  </div>
+  <div class="tape" aria-hidden="true">
+    <span class="tape-fill" style="--pct: {{ [[pct, 0]|max, 100]|min }}%"></span>
+    {% for at, tick_label in ticks %}<span class="tick" style="--at: {{ at }}%"><span>{{ tick_label }}</span></span>{% endfor %}
+  </div>
+  {% if note %}<p class="readout-note">{{ note }}</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<article class="result lvl-{{ a.level }}">
+  <header class="result-head">
+    <div class="station">
+      <h1><span class="code">{{ obs.station }}</span>{% if obs.name %} <span class="station-name">{{ obs.name }}</span>{% endif %}</h1>
+      {% if live %}
+      <p class="muted">Observed {{ obs.observed or 'time not given' }} via {{ obs.source }}</p>
+      {% else %}
+      <p class="muted">Values you entered. <a href="{{ url_for('manual') }}">Change them</a></p>
+      {% endif %}
+    </div>
+    <div class="verdict">
+      <p class="verdict-level">{{ a.label }} risk</p>
+      <ol class="cats" aria-label="Flight category {{ a.category }}">
+        {% for c in ['VFR', 'MVFR', 'IFR', 'LIFR'] %}
+        <li class="cat cat-{{ c|lower }} {% if c == a.category %}is-current{% endif %}" {% if c == a.category %}aria-current="true"{% endif %}>{{ c }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+  </header>
+
+  {% if tokens %}
+  <section class="metar" aria-labelledby="metar-title">
+    <h2 id="metar-title" class="sr-only">Raw METAR</h2>
+    <p class="metar-raw">{% for t in tokens %}<span class="tok"{% if t.kind %} data-kind="{{ t.kind }}"{% endif %}>{{ t.text }}</span> {% endfor %}</p>
+  </section>
+  {% endif %}
+
+  <section class="readouts" aria-label="Decoded values">
+    {% set wind_txt = obs.wind_dir ~ (' ' if obs.wind_dir else '') ~ '%g'|format(obs.wind_kt) ~ ' kt' ~ (', gusts ' ~ '%g'|format(obs.gust_kt) if obs.gust_kt else '') %}
+    {{ tape('wind', 'Wind', wind_txt, ((obs.gust_kt or obs.wind_kt) / 50 * 100), levels.wind, [(30, '15'), (60, '30')]) }}
+
+    {{ tape('vis', 'Visibility', ('10 km or more' if obs.vis_km >= 9.9 else '%g'|format(obs.vis_km) ~ ' km'),
+            (obs.vis_km / 10 * 100), levels.vis, [(16, '1.6'), (50, '5')]) }}
+
+    {% if obs.ceiling_ft is not none %}
+      {{ tape('cloud', 'Ceiling', '{:,}'.format(obs.ceiling_ft) ~ ' ft', (obs.ceiling_ft / 5000 * 100), levels.cloud, [(10, '500'), (20, '1k'), (60, '3k')]) }}
+    {% else %}
+      {{ tape('cloud', 'Ceiling', 'None', 100, 0, [(10, '500'), (20, '1k'), (60, '3k')], 'No broken or overcast layer reported') }}
+    {% endif %}
+
+    {% if obs.temp_c is not none %}
+      {% set spread = (obs.temp_c - obs.dew_c) if obs.dew_c is not none else none %}
+      {{ tape('temp', 'Temperature', '%g'|format(obs.temp_c) ~ ' °C' ~ (' / dew ' ~ '%g'|format(obs.dew_c) if obs.dew_c is not none else ''),
+              ((obs.temp_c + 20) / 70 * 100), 0, [(28.6, '0°')],
+              ('Spread ' ~ '%g'|format(spread) ~ '°: fog or low cloud likely' if spread is not none and spread <= 2 else none)) }}
+    {% endif %}
+  </section>
+
+  <section class="why" aria-labelledby="why-title">
+    <h2 id="why-title">Why {{ a.label|lower }}</h2>
+    {% if a.reasons %}
+    <ul>
+      {% for r in a.reasons %}<li class="reason reason-{{ r.level|lower }}"><span class="reason-level">{{ r.level }}</span> {{ r.text }}</li>{% endfor %}
+    </ul>
+    {% else %}
+    <p>Wind, visibility and ceiling are all inside normal operating limits{% if a.model_level is not none %}, and the trained model agrees{% endif %}.</p>
+    {% endif %}
+    <p class="sources muted">Rule check: {{ ['Low', 'Moderate', 'High'][a.rule_level] }}. Model: {{ ['Low', 'Moderate', 'High'][a.model_level] if a.model_level is not none else 'not available' }}. The result takes the higher of the two.</p>
+  </section>
+
+  <div class="actions">
+    {% if live %}<a class="btn" href="{{ url_for('station', icao=obs.station) }}">Refresh</a>{% endif %}
+    <a class="btn btn-quiet" href="{{ url_for('report', station=obs.station, wind=obs.wind_kt, vis=obs.vis_km, temp=obs.temp_c if obs.temp_c is not none else 15, gust=obs.gust_kt or '', ceiling=obs.ceiling_ft if obs.ceiling_ft is not none else '', raw=obs.raw, observed=obs.observed) }}">Download report</a>
+    <a class="btn btn-quiet" href="{{ url_for('manual') }}">Try your own values</a>
+  </div>
+</article>
+{% endblock %}

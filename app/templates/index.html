@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block bar_search %}{% endblock %}
+{% block content %}
+<section class="home">
+  <form class="strip-form" action="{{ url_for('station') }}" method="get" role="search">
+    <label for="icao" class="strip-label">Airport ICAO code</label>
+    <div class="strip">
+      <input id="icao" name="icao" value="{{ icao or '' }}" placeholder="VOBL" maxlength="4"
+             autocomplete="off" spellcheck="false" autocapitalize="characters" required
+             {% if error %}aria-invalid="true" aria-describedby="icao-error"{% endif %} autofocus>
+      <button type="submit">Check weather</button>
+    </div>
+    {% if error %}<p class="field-error" id="icao-error" role="alert">{{ error }}</p>{% endif %}
+  </form>
+
+  <p class="home-lede">Pulls the latest METAR for the airport, decodes it, and rates wind, visibility and cloud ceiling against operating limits and a trained risk model.</p>
+
+  <div class="home-lists">
+    <section aria-labelledby="try-title">
+      <h2 id="try-title">Try a station</h2>
+      <ul class="station-list">
+        {% for code, place in examples %}
+        <li><a href="{{ url_for('station', icao=code) }}"><span class="code">{{ code }}</span><span>{{ place }}</span></a></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    {% if user %}
+    <section aria-labelledby="recent-title">
+      <h2 id="recent-title">Your recent checks</h2>
+      {% if history %}
+      <ul class="station-list">
+        {% for h in history %}
+        <li><a href="{{ url_for('station', icao=h.station) }}">
+          <span class="code">{{ h.station }}</span>
+          <span class="cat cat-{{ h.category|lower }}">{{ h.category }}</span>
+          <span class="muted">{{ h.level }} risk, {{ h.at }}</span>
+        </a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">Stations you check show up here so you can recheck them in one click.</p>
+      {% endif %}
+    </section>
+    {% else %}
+    <section aria-labelledby="acct-title">
+      <h2 id="acct-title">Keep a list of your airports</h2>
+      <p class="muted">With an account, every station you check is saved here for a quick recheck.</p>
+      <p><a href="{{ url_for('signup') }}">Create an account</a> or <a href="{{ url_for('login') }}">log in</a></p>
+    </section>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
