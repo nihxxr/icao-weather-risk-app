@@ -1,11 +1,8 @@
-# Python
 __pycache__/
 *.py[cod]
-venv/
 .venv/
-
-# Local user store
-users.json
-
-# Environment
+venv/
+.pytest_cache/
 .env
+instance/
+users.json

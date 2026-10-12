@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Weather Risk{% endblock %}</title>
+  <meta name="description" content="Live METAR lookup and weather risk check for any ICAO airport code.">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/b612-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/b612-mono-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230E2235'/%3E%3Cpath d='M16 6v20M6 16h20' stroke='%23E9EEF1' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='5' fill='none' stroke='%231E8E3E' stroke-width='3'/%3E%3C/svg%3E">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="bar">
+    <a class="brand" href="{{ url_for('index') }}">
+      <svg aria-hidden="true" viewBox="0 0 32 32" width="26" height="26"><circle cx="16" cy="16" r="14" fill="currentColor"/><path d="M16 6v20M6 16h20" stroke="var(--chart)" stroke-width="2"/><circle cx="16" cy="16" r="5" fill="none" stroke="var(--vfr)" stroke-width="3"/></svg>
+      Weather Risk
+    </a>
+    {% block bar_search %}
+    <form class="bar-search" action="{{ url_for('station') }}" method="get" role="search">
+      <label class="sr-only" for="bar-icao">ICAO code</label>
+      <input id="bar-icao" name="icao" placeholder="ICAO" maxlength="4" autocomplete="off" spellcheck="false" required>
+      <button type="submit">Check</button>
+    </form>
+    {% endblock %}
+    <nav class="bar-nav" aria-label="Account">
+      <a href="{{ url_for('manual') }}">Enter values</a>
+      {% if user %}
+        <span class="who">{{ user }}</span>
+        <a href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Log in</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  {% with messages = get_flashed_messages() %}
+    {% for msg in messages %}<p class="flash" role="status">{{ msg }}</p>{% endfor %}
+  {% endwith %}
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="foot">
+    <p>For situational awareness only. Always get an official briefing before flight.</p>
+    <p>Data from NOAA Aviation Weather Center{% if config.AVWX_TOKEN %} and AVWX{% endif %}. Built by <a href="https://niharg-portfolio.netlify.app/">Nihar Girish</a>.</p>
+  </footer>
+</body>
+</html>

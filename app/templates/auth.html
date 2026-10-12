@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Create account' if mode == 'signup' else 'Log in' }} | Weather Risk{% endblock %}
+{% block content %}
+<section class="panel narrow">
+  <h1>{{ 'Create an account' if mode == 'signup' else 'Log in' }}</h1>
+  <p class="muted">{{ 'Save the stations you check and recheck them from the home page.' if mode == 'signup' else 'Pick up your saved stations.' }}</p>
+  {% if error %}<p class="field-error" role="alert">{{ error }}</p>{% endif %}
+  <form method="post" class="stack-form">
+    <label>Username
+      <input name="username" autocomplete="username" required minlength="3" autocapitalize="none"></label>
+    <label>Password
+      <input type="password" name="password" autocomplete="{{ 'new-password' if mode == 'signup' else 'current-password' }}" required {% if mode == 'signup' %}minlength="8"{% endif %}></label>
+    <button class="btn" type="submit">{{ 'Create account' if mode == 'signup' else 'Log in' }}</button>
+  </form>
+  {% if mode == 'signup' %}
+  <p>Already have one? <a href="{{ url_for('login') }}">Log in</a></p>
+  {% else %}
+  <p>New here? <a href="{{ url_for('signup') }}">Create an account</a></p>
+  {% endif %}
+</section>
+{% endblock %}
